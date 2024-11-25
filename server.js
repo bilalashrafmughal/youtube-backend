@@ -27,7 +27,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/tts", async (req, res) => {
-  const { text } = req.body;
+  const { text, selectedVoice } = req.body;
   if (!text) {
     return res.status(400).send({ msg: "no text found" });
   }
@@ -38,13 +38,13 @@ app.post("/tts", async (req, res) => {
   const request = {
     input: { text: text },
     voice: {
-      languageCode: "en-US",
-      ssmlGender: "MALE",
-      name: "en-US-Neural2-J",
+      languageCode: selectedVoice ? selectedVoice?.languageCodes[0] : "en-US",
+      ssmlGender: selectedVoice ? selectedVoice?.ssmlGender : "MALE",
+      name: selectedVoice ? selectedVoice?.name : "en-US-Neural2-J",
     },
     audioConfig: { audioEncoding: "MP3" },
   };
-  debugger;
+
   try {
     const [response] = await googleClient.synthesizeSpeech(request);
 
@@ -54,9 +54,16 @@ app.post("/tts", async (req, res) => {
       url,
     });
   } catch (err) {
-    debugger;
     console.error(err);
   }
+});
+
+app.get("/tts/get-voices", async (req, res) => {
+  const googleClient = new TextToSpeechClient();
+  const voices = await googleClient.listVoices({});
+  return res.status(200).json({
+    voices: voices,
+  });
 });
 
 // Start the server
